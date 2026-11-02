@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Listening Game (11-20)</title>
+    <!-- Google Fonts for Balsamiq Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Balsamiq+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for UI icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* CSS Resets & Base Variables */
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary-bg: #4A90E2;
+            --card-bg: rgba(255, 255, 255, 0.92);
+            --accent-yellow: #FFD166;
+            --accent-green: #06D6A0;
+            --accent-red: #EF476F;
+            --accent-purple: #118AB2;
+            --text-color: #2C3E50;
+            --shadow-color: rgba(0, 0, 0, 0.2);
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Balsamiq Sans', cursive, sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+        }
+
+        /* Full App Wrapper & Background Image Handling */
+        #app-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.4s ease-in-out;
+        }
+
+        /* Screen Fallback Visual Styles when PNGs aren't present */
+        .bg-home-fallback {
+            background: linear-gradient(135deg, #70A1FF 0%, #1E90FF 100%),
+                        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3) 0%, transparent 40%),
+                        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.2) 0%, transparent 40%);
+        }
+
+        .bg-game-fallback {
+            background: linear-gradient(135deg, #A8E6CF 0%, #3EDBF0 100%),
+                        radial-gradient(circle at 50% 30%, rgba(255,255,255,0.4) 0%, transparent 60%);
+        }
+
+        /* UI Screen Containers */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 2rem;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Universal Glass Container Box */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 28px;
+            box-shadow: 0 12px 32px var(--shadow-color), inset 0 2px 4px rgba(255,255,255,0.8);
+            border: 4px solid #FFFFFF;
+            padding: 2.5rem;
+            text-align: center;
+            max-width: 900px;
+            width: 90%;
+        }
+
+        /* Typography */
+        h1.game-title {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            color: #FF5964;
+            text-shadow: 3px 3px 0px #FFF, 6px 6px 0px rgba(0,0,0,0.15);
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+
+        p.subtitle {
+            font-size: clamp(1.2rem, 2.5vw, 2rem);
+            color: #35A7FF;
+            margin-bottom: 2rem;
+            font-weight: bold;
+        }
+
+        /* Buttons & Touch Controls */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-family: inherit;
+            font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+            font-weight: 700;
+            color: #FFFFFF;
+            padding: 0.8em 1.8em;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 0px rgba(0, 0, 0, 0.2), 0 15px 20px rgba(0, 0, 0, 0.15);
+            transition: all 0.15s ease;
+            outline: none;
+            position: relative;
+            top: 0;
+        }
+
+        .btn:active {
+            top: 6px;
+            box-shadow: 0 2px 0px rgba(0, 0, 0, 0.2), 0 5px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-start {
+            background: linear-gradient(180deg, #FF9F1C 0%, #FFBF69 100%);
+            border: 4px solid #FFF;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        .btn-restart {
+            background: linear-gradient(180deg, #06D6A0 0%, #118AB2 100%);
+            border: 4px solid #FFF;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        /* Top Bar Utilities (Fullscreen, Audio Toggles) */
+        .top-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 50;
+        }
+
+        .icon-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: 3px solid #35A7FF;
+            color: #35A7FF;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease, background-color 0.2s;
+        }
+
+        .icon-btn:hover {
+            transform: scale(1.08);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+
+        .icon-btn.off {
+            color: #95A5A6;
+            border-color: #BDC3C7;
+            background: #ECF0F1;
+        }
+
+        /* HUD - Score & Timer Display */
+        .hud-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 20px;
+            z-index: 40;
+        }
+
+        .hud-pill {
+            background: #FFFFFF;
+            border: 3px solid #FFD166;
+            padding: 10px 24px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: clamp(1.2rem, 2.5vw, 2rem);
+            font-weight: 700;
+            color: #2C3E50;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .hud-pill i {
+            color: #FF9F1C;
+        }
+
+        .hud-pill.timer i {
+            color: #EF476F;
+        }
+
+        /* Gameplay Area */
+        .game-main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            gap: 3rem;
+        }
+
+        /* Central Replay Audio Button */
+        .replay-audio-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-replay-audio {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #FFD166, #FF9F1C);
+            border: 6px solid #FFFFFF;
+            color: #FFFFFF;
+            font-size: 3.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(255, 159, 28, 0.4), inset 0 3px 5px rgba(255,255,255,0.6);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            position: relative;
+        }
+
+        .btn-replay-audio:active {
+            transform: scale(0.92);
+        }
+
+        .btn-replay-audio.pulse {
+            animation: pulse-ring 1.2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 159, 28, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 25px rgba(255, 159, 28, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 159, 28, 0);
+            }
+        }
+
+        .replay-label {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2C3E50;
+            background: rgba(255,255,255,0.85);
+            padding: 4px 16px;
+            border-radius: 20px;
+        }
+
+        /* Answer Choices Cards Container */
+        .choices-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3rem;
+            width: 90%;
+            max-width: 1000px;
+        }
+
+        .choice-card {
+            flex: 1;
+            min-height: 220px;
+            background: #FFFFFF;
+            border: 6px solid #4A90E2;
+            border-radius: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(3rem, 7vw, 5.5rem);
+            font-weight: bold;
+            color: #2C3E50;
+            cursor: pointer;
+            box-shadow: 0 12px 25px rgba(0,0,0,0.15), inset 0 4px 0 rgba(255,255,255,0.9);
+            transition: transform 0.15s ease, border-color 0.15s, background-color 0.15s;
+            position: relative;
+            padding: 1rem;
+        }
+
+        .choice-card:hover {
+            transform: translateY(-5px);
+            border-color: #35A7FF;
+        }
+
+        .choice-card:active {
+            transform: translateY(2px) scale(0.98);
+        }
+
+        .choice-card .word-text {
+            text-transform: lowercase;
+            line-height: 1;
+        }
+
+        /* Feedback Animations */
+        .choice-card.correct-anim {
+            animation: bounce-correct 0.5s ease forwards;
+            background-color: #E8F8F5 !important;
+            border-color: #06D6A0 !important;
+            color: #06D6A0 !important;
+        }
+
+        .choice-card.wrong-anim {
+            animation: shake-wrong 0.5s ease forwards;
+            background-color: #FDEDEC !important;
+            border-color: #EF476F !important;
+            color: #EF476F !important;
+        }
+
+        @keyframes bounce-correct {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.12); }
+            50% { transform: scale(0.95); }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake-wrong {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-15px); }
+            40%, 80% { transform: translateX(15px); }
+        }
+
+        /* Results Screen Details */
+        .stars-container {
+            font-size: 3.5rem;
+            color: #FFD166;
+            margin: 1rem 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .final-score-display {
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            margin-bottom: 1.5rem;
+            color: #2C3E50;
+        }
+
+        .highlight-score {
+            color: #FF5964;
+            font-weight: bold;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .choices-container {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            .choice-card {
+                min-height: 140px;
+                width: 100%;
+            }
+            .hud-container {
+                top: 10px;
+                left: 10px;
+                gap: 10px;
+            }
+            .hud-pill {
+                padding: 6px 14px;
+                font-size: 1.1rem;
+            }
+            .top-controls {
+                top: 10px;
+                right: 10px;
+                gap: 8px;
+            }
+            .icon-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container" class="bg-home-fallback">
+        
+        <!-- Persistent Top Controls Header -->
+        <div class="top-controls">
+            <button id="btn-music-toggle" class="icon-btn" title="Toggle Music">
+                <i class="fa-solid fa-music"></i>
+            </button>
+            <button id="btn-fullscreen-toggle" class="icon-btn" title="Toggle Fullscreen">
+                <i class="fa-solid fa-expand"></i>
+            </button>
+        </div>
+
+        <!-- Home / Start Screen -->
+        <div id="screen-home" class="screen active">
+            <div class="glass-card">
+                <h1 class="game-title">Number Listening Game</h1>
+                <p class="subtitle">Listen and tap the correct word!</p>
+                <button id="btn-start-game" class="btn btn-start">
+                    <i class="fa-solid fa-play"></i> START GAME
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Gameplay Screen -->
+        <div id="screen-game" class="screen">
+            <!-- Game HUD -->
+            <div class="hud-container">
+                <div class="hud-pill score">
+                    <i class="fa-solid fa-star"></i>
+                    <span>Score: <strong id="hud-score-val">0</strong></span>
+                </div>
+                <div class="hud-pill timer">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Time: <strong id="hud-timer-val">60</strong>s</span>
+                </div>
+            </div>
+
+            <!-- Central Gameplay Interface -->
+            <div class="game-main">
+                <div class="replay-audio-container">
+                    <button id="btn-replay-audio" class="btn-replay-audio pulse" title="Listen Again">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                    <span class="replay-label">Tap to Listen</span>
+                </div>
+
+                <!-- 2 Large Prominent Answer Cards -->
+                <div class="choices-container">
+                    <div id="choice-btn-0" class="choice-card" data-index="0">
+                        <span class="word-text">--</span>
+                    </div>
+                    <div id="choice-btn-1" class="choice-card" data-index="1">
+                        <span class="word-text">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over / Results Screen -->
+        <div id="screen-over" class="screen">
+            <div class="glass-card">
+                <h1 class="game-title">Time's Up!</h1>
+                <div class="stars-container" id="stars-wrapper">
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <div class="final-score-display">
+                    You scored <span class="highlight-score" id="final-score-val">0</span> points!
+                </div>
+                <button id="btn-play-again" class="btn btn-restart">
+                    <i class="fa-solid fa-rotate-right"></i> PLAY AGAIN
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Application Script Section -->
+    <script>
+        /**
+         * Vocabulary Configuration (Strictly lowercase)
+         */
+        const VOCABULARY = [
+            { word: 'eleven' },
+            { word: 'twelve' },
+            { word: 'thirteen' },
+            { word: 'fourteen' },
+            { word: 'fifteen' },
+            { word: 'sixteen' },
+            { word: 'seventeen' },
+            { word: 'eighteen' },
+            { word: 'nineteen' },
+            { word: 'twenty' }
+        ];
+
+        /**
+         * Global Game State
+         */
+        let score = 0;
+        let timeRemaining = 60;
+        let timerInterval = null;
+        let currentTarget = null;
+        let currentOptions = [];
+        let previousTarget = null;
+        let isAnswerLocked = false;
+        let isMusicEnabled = true;
+
+        /**
+         * Web Audio API Engine
+         */
+        class AudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.bgmGain = null;
+                this.isBgmPlaying = false;
+                this.bgmTimer = null;
+                this.noteSequence = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63];
+                this.noteIndex = 0;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                    
+                    this.bgmGain = this.ctx.createGain();
+                    this.bgmGain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                    this.bgmGain.connect(this.ctx.destination);
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            startBGM() {
+                if (!this.ctx || this.isBgmPlaying) return;
+                this.isBgmPlaying = true;
+                
+                const playNextNote = () => {
+                    if (!this.isBgmPlaying || !isMusicEnabled) return;
+
+                    const osc = this.ctx.createOscillator();
+                    const noteGain = this.ctx.createGain();
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(this.noteSequence[this.noteIndex], this.ctx.currentTime);
+                    
+                    noteGain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                    noteGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+                    
+                    osc.connect(noteGain);
+                    noteGain.connect(this.bgmGain);
+                    
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.4);
+                    
+                    this.noteIndex = (this.noteIndex + 1) % this.noteSequence.length;
+                    this.bgmTimer = setTimeout(playNextNote, 400);
+                };
+
+                playNextNote();
+            }
+
+            stopBGM() {
+                this.isBgmPlaying = false;
+                if (this.bgmTimer) clearTimeout(this.bgmTimer);
+            }
+
+            duckBGM(duck) {
+                if (!this.bgmGain || !this.ctx) return;
+                const targetVol = duck ? 0.015 : 0.08;
+                this.bgmGain.gain.linearRampToValueAtTime(targetVol, this.ctx.currentTime + 0.2);
+            }
+
+            playCorrectSFX() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                
+                const osc1 = this.ctx.createOscillator();
+                const osc2 = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc1.type = 'sine';
+                osc2.type = 'sine';
+
+                osc1.frequency.setValueAtTime(523.25, now);
+                osc1.frequency.exponentialRampToValueAtTime(659.25, now + 0.15);
+
+                osc2.frequency.setValueAtTime(659.25, now + 0.15);
+                osc2.frequency.exponentialRampToValueAtTime(783.99, now + 0.3);
+
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc1.start(now);
+                osc1.stop(now + 0.15);
+                osc2.start(now + 0.15);
+                osc2.stop(now + 0.4);
+            }
+
+            playIncorrectSFX() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(130, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+        }
+
+        const audioEngine = new AudioEngine();
+
+        /**
+         * Target Vocabulary Speech Controller
+         */
+        function playTargetAudio(word, callback) {
+            audioEngine.duckBGM(true);
+            
+            const audioPath = `${word}.mp3`;
+            const audio = new Audio(audioPath);
+            let playHandled = false;
+
+            const cleanupAndCallback = () => {
+                if (!playHandled) {
+                    playHandled = true;
+                    audioEngine.duckBGM(false);
+                    if (callback) callback();
+                }
+            };
+
+            audio.play().then(() => {
+                audio.onended = cleanupAndCallback;
+            }).catch(() => {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(word);
+                    utterance.lang = 'en-US';
+                    utterance.rate = 0.85;
+                    utterance.pitch = 1.0;
+
+                    utterance.onend = cleanupAndCallback;
+                    utterance.onerror = cleanupAndCallback;
+
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    cleanupAndCallback();
+                }
+            });
+
+            setTimeout(() => {
+                if (!playHandled) cleanupAndCallback();
+            }, 2000);
+        }
+
+        function checkAndSetBackgrounds() {
+            const appElem = document.getElementById('app-container');
+            const imgHome = new Image();
+            imgHome.src = 'homescreen.png';
+            imgHome.onload = () => {
+                if (document.getElementById('screen-home').classList.contains('active')) {
+                    appElem.style.backgroundImage = "url('homescreen.png')";
+                    appElem.classList.remove('bg-home-fallback');
+                }
+            };
+
+            const imgGame = new Image();
+            imgGame.src = 'gamescreen.png';
+        }
+
+        function setScreenBackground(screenName) {
+            const appElem = document.getElementById('app-container');
+            if (screenName === 'home') {
+                appElem.classList.remove('bg-game-fallback');
+                appElem.classList.add('bg-home-fallback');
+                appElem.style.backgroundImage = "url('homescreen.png'), linear-gradient(135deg, #70A1FF 0%, #1E90FF 100%)";
+            } else {
+                appElem.classList.remove('bg-home-fallback');
+                appElem.classList.add('bg-game-fallback');
+                appElem.style.backgroundImage = "url('gamescreen.png'), linear-gradient(135deg, #A8E6CF 0%, #3EDBF0 100%)";
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+            }
+
+            if (screenId === 'screen-home') {
+                setScreenBackground('home');
+            } else if (screenId === 'screen-game') {
+                setScreenBackground('game');
+            } else if (screenId === 'screen-over') {
+                setScreenBackground('home');
+            }
+        }
+
+        function startNewGame() {
+            score = 0;
+            timeRemaining = 60;
+            previousTarget = null;
+            isAnswerLocked = false;
+
+            document.getElementById('hud-score-val').textContent = score;
+            document.getElementById('hud-timer-val').textContent = timeRemaining;
+
+            showScreen('screen-game');
+            
+            audioEngine.init();
+            if (isMusicEnabled) {
+                audioEngine.startBGM();
+            }
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+
+            nextRound();
+        }
+
+        function updateTimer() {
+            timeRemaining--;
+            document.getElementById('hud-timer-val').textContent = timeRemaining;
+
+            if (timeRemaining <= 0) {
+                endGame();
+            }
+        }
+
+        function nextRound() {
+            isAnswerLocked = false;
+            
+            const cards = document.querySelectorAll('.choice-card');
+            cards.forEach(card => {
+                card.classList.remove('correct-anim', 'wrong-anim');
+            });
+
+            let availableTargets = VOCABULARY;
+            if (previousTarget && VOCABULARY.length > 1) {
+                availableTargets = VOCABULARY.filter(v => v.word !== previousTarget.word);
+            }
+            currentTarget = availableTargets[Math.floor(Math.random() * availableTargets.length)];
+            previousTarget = currentTarget;
+
+            const distractors = VOCABULARY.filter(v => v.word !== currentTarget.word);
+            const distractor = distractors[Math.floor(Math.random() * distractors.length)];
+
+            currentOptions = [currentTarget, distractor];
+            if (Math.random() > 0.5) {
+                currentOptions.reverse();
+            }
+
+            currentOptions.forEach((opt, index) => {
+                const card = document.getElementById(`choice-btn-${index}`);
+                card.querySelector('.word-text').textContent = opt.word.toLowerCase();
+            });
+
+            playTargetAudio(currentTarget.word);
+        }
+
+        function handleAnswerSelection(selectedIndex) {
+            if (isAnswerLocked || timeRemaining <= 0) return;
+
+            const selectedOption = currentOptions[selectedIndex];
+            const selectedCard = document.getElementById(`choice-btn-${selectedIndex}`);
+
+            if (selectedOption.word === currentTarget.word) {
+                isAnswerLocked = true;
+                score += 1;
+                document.getElementById('hud-score-val').textContent = score;
+
+                selectedCard.classList.add('correct-anim');
+                audioEngine.playCorrectSFX();
+
+                setTimeout(() => {
+                    nextRound();
+                }, 900);
+
+            } else {
+                selectedCard.classList.add('wrong-anim');
+                audioEngine.playIncorrectSFX();
+
+                setTimeout(() => {
+                    selectedCard.classList.remove('wrong-anim');
+                }, 500);
+            }
+        }
+
+        function endGame() {
+            if (timerInterval) clearInterval(timerInterval);
+            isAnswerLocked = true;
+            audioEngine.stopBGM();
+
+            document.getElementById('final-score-val').textContent = score;
+            
+            const starsContainer = document.getElementById('stars-wrapper');
+            let starsHTML = '';
+            let starCount = 1;
+            if (score >= 12) starCount = 3;
+            else if (score >= 6) starCount = 2;
+
+            for (let i = 0; i < 3; i++) {
+                if (i < starCount) {
+                    starsHTML += '<i class="fa-solid fa-star"></i>';
+                } else {
+                    starsHTML += '<i class="fa-regular fa-star" style="color:#BDC3C7;"></i>';
+                }
+            }
+            starsContainer.innerHTML = starsHTML;
+
+            showScreen('screen-over');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                const docElem = document.documentElement;
+                if (docElem.requestFullscreen) docElem.requestFullscreen();
+                else if (docElem.webkitRequestFullscreen) docElem.webkitRequestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAndSetBackgrounds();
+
+            document.getElementById('btn-start-game').addEventListener('click', () => {
+                startNewGame();
+            });
+
+            document.getElementById('btn-play-again').addEventListener('click', () => {
+                startNewGame();
+            });
+
+            document.getElementById('btn-replay-audio').addEventListener('click', () => {
+                if (currentTarget) {
+                    playTargetAudio(currentTarget.word);
+                }
+            });
+
+            document.querySelectorAll('.choice-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const idx = parseInt(e.currentTarget.getAttribute('data-index'), 10);
+                    handleAnswerSelection(idx);
+                });
+            });
+
+            const musicBtn = document.getElementById('btn-music-toggle');
+            musicBtn.addEventListener('click', () => {
+                isMusicEnabled = !isMusicEnabled;
+                if (isMusicEnabled) {
+                    musicBtn.classList.remove('off');
+                    audioEngine.init();
+                    audioEngine.startBGM();
+                } else {
+                    musicBtn.classList.add('off');
+                    audioEngine.stopBGM();
+                }
+            });
+
+            document.getElementById('btn-fullscreen-toggle').addEventListener('click', () => {
+                toggleFullscreen();
+            });
+        });
+    </script>
+</body>
+</html>
